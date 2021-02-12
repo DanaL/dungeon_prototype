@@ -12,15 +12,15 @@ def pick_room():
 	width = 0
 	room = []
 
-	if rn < 0.75:
+	if rn < 0.80:
 		# rectangle
 		height = random.randint(5, 8)
 		width = random.randint(5, 25)
-		room.append(list('*' * (width + 2)))
+		room.append(list('#' * (width + 2)))
 		for r in range(0, height):
-			row = '*' + ('.' * width) + '*'
+			row = '#' + ('.' * width) + '#'
 			room.append(list(row))
-		room.append(list('*' * (width + 2)))
+		room.append(list('#' * (width + 2)))
 
 		height += 2
 		width += 2
@@ -28,7 +28,7 @@ def pick_room():
 		# circle
 		radius = random.choice([3, 4, 5, 6])
 		for row in range(0, radius * 2 + 3):
-			room.append(list('*' * (radius * 2 + 3)))
+			room.append(list('#' * (radius * 2 + 3)))
 
 		height = radius * 2 + 3
 		width = radius * 2 + 3
@@ -63,8 +63,6 @@ def pick_room():
 				if math.sqrt(abs(r - rc) ** 2 + abs(c - cc) ** 2) <= radius:
 					room[r][c] = '.'
 
-	#print("radius:", radius, rc, cc)
-	#print_dungeon(room)
 	return (room, height, width)
 
 def carve_room(dungoen, row, col, room):
@@ -92,6 +90,49 @@ def room_fits(dungeon, room, start_row, end_row, start_col, end_col):
 
 	return True
 
+def add_doorway(dungeon, horizontal, loc, lo, hi):
+	if horizontal:
+		# find the places where a door could go
+		options = []
+		for col in range(lo, hi):
+			if dungeon[loc - 1][col] == "." and dungeon[loc + 1][col] == ".":
+				options.append(col)
+
+		if len(options) > 0:
+			c = random.choice(options)
+			dungeon[loc][c] = "+" if random.random() < 0.80 else "."
+		else:
+			# if there are no options of 1-thickness walls, make a short hallway between
+			# the two rooms.
+			col = (lo + hi) // 2	
+			row = loc
+			while dungeon[row][col] != ".":
+				dungeon[row][col] = "."
+				row -= 1
+			row = loc + 1
+			while dungeon[row][col] != ".":
+				dungeon[row][col] = "."
+				row += 1
+	else:
+		options = []
+		for row in range(lo, hi):
+			if dungeon[row][loc - 1] == "." and dungeon[row][loc + 1] == ".":
+				options.append(row)
+			
+		if len(options) > 0:
+			r = random.choice(options)
+			dungeon[r][loc] = "+" if random.random() < 0.80 else "."
+		else:
+			row = (lo + hi) // 2	
+			col = loc
+			while dungeon[row][col] != ".":
+				dungeon[row][col] = "."
+				col -= 1
+			col = loc + 1
+			while dungeon[row][col] != ".":
+				dungeon[row][col] = "."
+				col += 1
+
 def place_room(dungeon, rooms, parent, room):
 	sides = ["n", "s", "e", "w"]
 	random.shuffle(sides)
@@ -109,6 +150,11 @@ def place_room(dungeon, rooms, parent, room):
 			if fits:
 				rooms.append((room[0], start_row, start_col, end_row, end_col))
 				carve_room(dungeon, start_row, start_col, room[0])
+
+				lo = parent[2] + 1 if parent[2] + 1 > start_col else start_col
+				hi = parent[4] - 1 if parent[4] - 1 < end_col else end_col
+				add_doorway(dungeon, True, end_row, lo, hi)
+
 				return True
 		elif side == "s":
 			start_row = parent[3] - 1
@@ -119,6 +165,11 @@ def place_room(dungeon, rooms, parent, room):
 			if fits:
 				rooms.append((room[0], start_row, start_col, end_row, end_col))
 				carve_room(dungeon, start_row, start_col, room[0])
+
+				lo = parent[2] + 1 if parent[2] + 1 > start_col else start_col
+				hi = parent[4] - 1 if parent[4] - 1 < end_col else end_col
+				add_doorway(dungeon, True, start_row, lo, hi)
+
 				return True
 		elif side == "w":
 			end_col = parent[2]
@@ -129,6 +180,11 @@ def place_room(dungeon, rooms, parent, room):
 			if fits:
 				rooms.append((room[0], start_row, start_col, end_row, end_col))
 				carve_room(dungeon, start_row, start_col, room[0])
+
+				lo = parent[1] + 1 if parent[1] + 1 > start_row else start_row
+				hi = parent[3] - 1 if parent[3] - 1 < end_row else end_row
+				add_doorway(dungeon, False, end_col, lo, hi)
+				
 				return True
 		elif side == "e":
 			start_col = parent[4] - 1
@@ -139,6 +195,11 @@ def place_room(dungeon, rooms, parent, room):
 			if fits:
 				rooms.append((room[0], start_row, start_col, end_row, end_col))
 				carve_room(dungeon, start_row, start_col, room[0])
+
+				lo = parent[1] + 1 if parent[1] + 1 > start_row else start_row
+				hi = parent[3] - 1 if parent[3] - 1 < end_row else end_row
+				add_doorway(dungeon, False, start_col, lo, hi)
+				
 				return True	
 		if len(sides) == 0:
 			break
@@ -179,7 +240,7 @@ def carve_dungeon(dungeon, height, width):
 		if not success:
 			# if we couldn't place a room, that's probably enough rooms
 			break
-		#break
+		
 	return dungeon
 
 dungeon = []
