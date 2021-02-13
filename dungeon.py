@@ -1,6 +1,8 @@
 import math
 import random
 
+DUNGEON_WIDTH = 125
+
 def print_dungeon(dungeon):
 	for row in dungeon:
 		r = "".join(row)
@@ -219,6 +221,84 @@ def find_spot_for_room(dungeon, rooms, room):
 			return True
 	return False
 
+# The first pass of sticking rooms beside each other and connecting them
+# via a doorway results in a map that has only a single path through it.
+# It's acyclic and it's more interesting to explore a dungeon with some loops.
+# So look for places we can add doors between rooms that aren't connected.
+# This are probably good candidates for secret doors!
+
+# Dumb, duplicated code but hey...prototype
+def add_extra_doors(dungeon, rooms):
+	# It may not hurt to shuffle the rooms, but they get added to the room
+	# list in a somewhat random fashion already.
+	extra_door_count = 0
+	for room in rooms:
+		# check north wall
+		already_connected = False
+		options = []
+		row = room[1]
+		for col in range(room[2] + 1, room[4] - 1):
+			if dungeon[row][col] != "#": 
+				already_connected = True
+				break
+			if dungeon[row - 1][col] == "." and dungeon[row + 1][col] == ".":
+				options.append(col)
+		if not already_connected and len(options) > 0:
+			col = random.choice(options)
+			dungeon[row][col] = "+"
+			extra_door_count += 1
+			print("Extra door added (north)!")
+			continue
+		# check south wall
+		already_connected = False
+		options = []
+		row = room[3] - 1
+		for col in range(room[2] + 1, room[4] - 1):
+			if dungeon[row][col] != "#": 
+				already_connected = True
+				break
+			if dungeon[row - 1][col] == "." and dungeon[row + 1][col] == ".":
+				options.append(col)
+		if not already_connected and len(options) > 0:
+			col = random.choice(options)
+			dungeon[row][col] = "+"
+			extra_door_count += 1
+			print("Extra door added (south)!")
+			continue
+		# check west wall
+		already_connected = False
+		options = []
+		col = room[2] 
+		for row in range(room[1] + 1, room[3] - 1):
+			if dungeon[row][col] != "#": 
+				already_connected = True
+				break
+			if dungeon[row][col -1] == "." and dungeon[row][col + 1] == ".":
+				options.append(row)
+		if not already_connected and len(options) > 0:
+			row = random.choice(options)
+			dungeon[row][col] = "+"
+			extra_door_count += 1
+			print("Extra door added (west)!")
+			continue
+		# check east wall
+		already_connected = False
+		options = []
+		col = room[4] - 1
+		if col == DUNGEON_WIDTH - 1: continue
+		for row in range(room[1] + 1, room[3] - 1):
+			if dungeon[row][col] != "#": 
+				already_connected = True
+				break
+			if dungeon[row][col -1] == "." and dungeon[row][col + 1] == ".":
+				options.append(row)
+		if not already_connected and len(options) > 0:
+			row = random.choice(options)
+			dungeon[row][col] = "+"
+			extra_door_count += 1
+			print("Extra door added (east)!")
+			continue
+
 def carve_dungeon(dungeon, height, width):
 	rooms = [] # in real code should be a hashset
 	
@@ -240,14 +320,32 @@ def carve_dungeon(dungeon, height, width):
 		if not success:
 			# if we couldn't place a room, that's probably enough rooms
 			break
-		
+
+	add_extra_doors(dungeon, rooms)
+
 	return dungeon
 
-dungeon = []
+acceptable = 0
 
-for j in range(0, 50):
-	row = '#' * 150
-	dungeon.append(list(row))
+while acceptable < 1:
+	dungeon = []
 
-dungeon = carve_dungeon(dungeon, 50, 150)
-print_dungeon(dungeon)
+	for j in range(0, 40):
+		row = '#' * DUNGEON_WIDTH
+		dungeon.append(list(row))
+
+	dungeon = carve_dungeon(dungeon, 40, DUNGEON_WIDTH)
+
+	wall_count = 0
+	for row in dungeon:
+		for sq in row:
+			if sq == "#": wall_count += 1
+	open_count = (40 * DUNGEON_WIDTH) - wall_count
+	print("Walls:", wall_count,"Open:", open_count)
+	print("% open:", open_count / (40 * DUNGEON_WIDTH))
+
+	# I think in a real game I'd probably wnat to reject a map with less than 37 or 38% open space.
+	# The just don't use up enough of the available space
+	if open_count / (40 * 125) > 0.39:
+		print_dungeon(dungeon)
+		acceptable += 1
