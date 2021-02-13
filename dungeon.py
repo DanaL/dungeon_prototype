@@ -464,6 +464,33 @@ def floodfill_check(dungeon):
 
 	return open_sqs == len(visited)
 
+def print_room(dungeon, room):
+	for r in range(room[1], room[3]):
+		s = ""
+		for c in range(room[2], room[4]):
+			s += dungeon[r][c]
+		print(s)
+
+# vaults are rooms that have only one entrance. They might be useful for placing
+# dungeon features
+def find_vaults(dungeon, rooms):
+	for room in rooms:
+		egresses = 0
+		for col in range(room[2], room[4]):
+			if dungeon[1][col] != '#':
+				egresses += 1
+		for col in range(room[2], room[4]):
+			if dungeon[3 - 1][col] != '#':
+				egresses += 1
+		for row in range(room[1], room[3]):
+			if dungeon[row][room[2]] != '#':
+				egresses += 1
+			if dungeon[row][room[4] - 1] != '#':
+				egresses += 1
+		if egresses == 1:
+			print("Vault found:")
+			print_room(dungeon, room)
+
 def carve_dungeon(dungeon, height, width):
 	rooms = [] # in real code should be a hashset
 	
@@ -490,11 +517,13 @@ def carve_dungeon(dungeon, height, width):
 	for _ in range(3):
 		try_to_add_corridor(dungeon, rooms)
 
+	find_vaults(dungeon, rooms)
+
 	return dungeon
 
 acceptable = 0
 
-while acceptable < 5:
+while acceptable < 1:
 	dungeon = []
 
 	for j in range(0, DUNGEON_HEIGHT):
@@ -523,5 +552,5 @@ while acceptable < 5:
 	# I think in a real game I'd probably wnat to reject a map with less than 37 or 38% open space.
 	# The just don't use up enough of the available space
 	if open_count / (40 * 125) > 0.39:
-		#print_dungeon(dungeon)
+		print_dungeon(dungeon)
 		acceptable += 1
