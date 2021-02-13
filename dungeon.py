@@ -2,6 +2,7 @@ import math
 import random
 
 DUNGEON_WIDTH = 125
+DUNGEON_HEIGHT = 40
 
 def print_dungeon(dungeon):
 	for row in dungeon:
@@ -87,7 +88,7 @@ def room_fits(dungeon, room, start_row, end_row, start_col, end_col):
 
 	for r in range(start_row, end_row):
 		for c in range(start_col, end_col):
-			if dungeon[r][c] == '.':
+			if dungeon[r][c] != '#':
 				return False
 
 	return True
@@ -299,6 +300,146 @@ def add_extra_doors(dungeon, rooms):
 			print("Extra door added (east)!")
 			continue
 
+def in_bounds(row, col):
+	return row > 1 and col > 1 and row < DUNGEON_HEIGHT - 1 and col < DUNGEON_WIDTH - 1
+
+def draw_corridor_north(dungeon, row, col):
+	pts = [row]
+	while True:	
+		row -= 1
+		if not in_bounds(row, col):
+			return False
+		if dungeon[row][col - 1] != "#" or dungeon[row][col + 1] != "#":
+			return False
+		pts.append(row)
+		if dungeon[row - 1][col] == ".":
+			break;
+
+	for r in pts:
+		dungeon[r][col] = "."
+
+	return True
+
+def draw_corridor_south(dungeon, row, col):
+	pts = [row]
+	while True:	
+		row += 1
+		if not in_bounds(row, col):
+			return False
+		if dungeon[row][col - 1] != "#" or dungeon[row][col + 1] != "#":
+			return False
+		pts.append(row)
+		if dungeon[row + 1][col] == ".":
+			break;
+
+	for r in pts:
+		dungeon[r][col] = "."
+
+	return True
+
+def draw_corridor_west(dungeon, row, col):
+	pts = [col]
+	while True:	
+		col -= 1
+		if not in_bounds(row, col):
+			return False
+		if dungeon[row - 1][col] != "#" or dungeon[row + 1][col] != "#":
+			return False
+		pts.append(col)
+		if dungeon[row][col - 1] == ".":
+			break;
+
+	for c in pts:
+		dungeon[row][c] = "."
+
+	return True
+
+def draw_corridor_east(dungeon, row, col):
+	pts = [col]
+	while True:	
+		col += 1
+		if not in_bounds(row, col):
+			return False
+		if dungeon[row - 1][col] != "#" or dungeon[row + 1][col] != "#":
+			return False
+		pts.append(col)
+		if dungeon[row][col + 1] == ".":
+			break;
+
+	for c in pts:
+		dungeon[row][c] = "."
+
+	return True
+
+# Again, we'll look for walls with no egress already
+def try_to_add_corridor(dungeon, rooms):
+	for room in rooms:
+		# check north wall
+		row = room[1]
+		options = []
+		already_connected = False
+		for col in range(room[2] + 1, room[4] - 1):
+			if dungeon[row + 1][col] != '.':
+				continue
+			if dungeon[row][col] != '#': 
+				already_connected = True
+				break
+			options.append(col)
+		if not already_connected and len(options) > 0:
+			col = random.choice(options)
+			success = draw_corridor_north(dungeon, row, col)
+			if success:
+				return
+		# check west wall
+		col = room[2]
+		options = []
+		already_connected = False
+		for row in range(room[1] + 1, room[3] - 1):
+			if dungeon[row][col + 1] != '.':
+				continue
+			if dungeon[row][col] != '#': 
+				already_connected = True
+				break
+			options.append(row)
+		if not already_connected and len(options) > 0:
+			row = random.choice(options)
+			success = draw_corridor_west(dungeon, row, col)
+			if success:
+				return
+		# check east wall
+		col = room[4] - 1
+		options = []
+		already_connected = False
+		for row in range(room[1] + 1, room[3] - 1):
+			if dungeon[row][col - 1] != '.':
+				continue
+			if dungeon[row][col] != '#': 
+				already_connected = True
+				break
+			options.append(row)
+		if not already_connected and len(options) > 0:
+			row = random.choice(options)
+			success = draw_corridor_east(dungeon, row, col)
+			if success:
+				return
+		#check south wall
+		row = room[3] - 1
+		options = []
+		already_connected = False
+		for col in range(room[2] + 1, room[4] - 1):
+			# checking the square to the south avoids corners of round rooms
+			if dungeon[row - 1][col] != ".":
+				continue
+			if dungeon[row][col] != '#': 
+				already_connected = True
+				break
+			options.append(col)
+		if not already_connected and len(options) > 0:
+			col = random.choice(options)
+			success = draw_corridor_south(dungeon, row, col)
+			if success:
+				return
+
 def carve_dungeon(dungeon, height, width):
 	rooms = [] # in real code should be a hashset
 	
@@ -322,6 +463,8 @@ def carve_dungeon(dungeon, height, width):
 			break
 
 	add_extra_doors(dungeon, rooms)
+	for _ in range(3):
+		try_to_add_corridor(dungeon, rooms)
 
 	return dungeon
 
@@ -330,19 +473,19 @@ acceptable = 0
 while acceptable < 1:
 	dungeon = []
 
-	for j in range(0, 40):
+	for j in range(0, DUNGEON_HEIGHT):
 		row = '#' * DUNGEON_WIDTH
 		dungeon.append(list(row))
 
-	dungeon = carve_dungeon(dungeon, 40, DUNGEON_WIDTH)
+	dungeon = carve_dungeon(dungeon, DUNGEON_HEIGHT, DUNGEON_WIDTH)
 
 	wall_count = 0
 	for row in dungeon:
 		for sq in row:
 			if sq == "#": wall_count += 1
-	open_count = (40 * DUNGEON_WIDTH) - wall_count
+	open_count = (DUNGEON_HEIGHT * DUNGEON_WIDTH) - wall_count
 	print("Walls:", wall_count,"Open:", open_count)
-	print("% open:", open_count / (40 * DUNGEON_WIDTH))
+	print("% open:", open_count / (DUNGEON_HEIGHT * DUNGEON_WIDTH))
 
 	# I think in a real game I'd probably wnat to reject a map with less than 37 or 38% open space.
 	# The just don't use up enough of the available space
