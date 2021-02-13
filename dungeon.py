@@ -145,13 +145,13 @@ def place_room(dungeon, rooms, parent, room):
 		if side == "n":
 			# Try to place new room to the north of parent. So we know what its lower co-ord will be, 
 			# Pick a column roughly toward the center of parent's north wall
-			end_row = parent[1]
+			end_row = parent[1] + 1
 			start_col = random.randint(parent[2] + 1, parent[4] - 5)
-			start_row = end_row - room[1] + 1
+			start_row = end_row - room[1] 
 			end_col = start_col + room[2]
 			fits = room_fits(dungeon, room, start_row, end_row, start_col, end_col)
 			if fits:
-				rooms.append((room[0], start_row, start_col, end_row, end_col))
+				rooms.append((room[0], start_row, start_col, end_row, end_col, "N"))
 				carve_room(dungeon, start_row, start_col, room[0])
 
 				lo = parent[2] + 1 if parent[2] + 1 > start_col else start_col
@@ -166,7 +166,7 @@ def place_room(dungeon, rooms, parent, room):
 			end_col = start_col + room[2]
 			fits = room_fits(dungeon, room, start_row, end_row, start_col, end_col)
 			if fits:
-				rooms.append((room[0], start_row, start_col, end_row, end_col))
+				rooms.append((room[0], start_row, start_col, end_row, end_col, "S"))
 				carve_room(dungeon, start_row, start_col, room[0])
 
 				lo = parent[2] + 1 if parent[2] + 1 > start_col else start_col
@@ -181,7 +181,7 @@ def place_room(dungeon, rooms, parent, room):
 			end_row = start_row + room[1] 
 			fits = room_fits(dungeon, room, start_row, end_row, start_col, end_col)
 			if fits:
-				rooms.append((room[0], start_row, start_col, end_row, end_col))
+				rooms.append((room[0], start_row, start_col, end_row, end_col, "W"))
 				carve_room(dungeon, start_row, start_col, room[0])
 
 				lo = parent[1] + 1 if parent[1] + 1 > start_row else start_row
@@ -196,7 +196,7 @@ def place_room(dungeon, rooms, parent, room):
 			end_row = start_row + room[1] 
 			fits = room_fits(dungeon, room, start_row, end_row, start_col, end_col)
 			if fits:
-				rooms.append((room[0], start_row, start_col, end_row, end_col))
+				rooms.append((room[0], start_row, start_col, end_row, end_col, "E"))
 				carve_room(dungeon, start_row, start_col, room[0])
 
 				lo = parent[1] + 1 if parent[1] + 1 > start_row else start_row
@@ -488,7 +488,7 @@ def find_vaults(dungeon, rooms):
 			if dungeon[row][room[4] - 1] != '#':
 				egresses += 1
 		if egresses == 1:
-			print("Vault found:")
+			print("Vault found: (", room[5], ")")
 			print_room(dungeon, room)
 
 def carve_dungeon(dungeon, height, width):
@@ -502,7 +502,7 @@ def carve_dungeon(dungeon, height, width):
 	row = 20
 	col = 70
 	room = pick_room()
-	rooms.append((room[0], row, col, row + room[1], col + room[2]))
+	rooms.append((room[0], row, col, row + room[1], col + room[2], "Start"))
 	carve_room(dungeon, row, col, room[0])
 
 	while True:
