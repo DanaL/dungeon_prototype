@@ -248,7 +248,7 @@ def add_extra_doors(dungeon, rooms):
 			col = random.choice(options)
 			dungeon[row][col] = "+"
 			extra_door_count += 1
-			print("Extra door added (north)!")
+			#print("Extra door added (north)!")
 			continue
 		# check south wall
 		already_connected = False
@@ -264,7 +264,7 @@ def add_extra_doors(dungeon, rooms):
 			col = random.choice(options)
 			dungeon[row][col] = "+"
 			extra_door_count += 1
-			print("Extra door added (south)!")
+			#print("Extra door added (south)!")
 			continue
 		# check west wall
 		already_connected = False
@@ -280,7 +280,7 @@ def add_extra_doors(dungeon, rooms):
 			row = random.choice(options)
 			dungeon[row][col] = "+"
 			extra_door_count += 1
-			print("Extra door added (west)!")
+			#print("Extra door added (west)!")
 			continue
 		# check east wall
 		already_connected = False
@@ -297,7 +297,7 @@ def add_extra_doors(dungeon, rooms):
 			row = random.choice(options)
 			dungeon[row][col] = "+"
 			extra_door_count += 1
-			print("Extra door added (east)!")
+			#print("Extra door added (east)!")
 			continue
 
 def in_bounds(row, col):
@@ -440,6 +440,30 @@ def try_to_add_corridor(dungeon, rooms):
 			if success:
 				return
 
+# Check to see if the entire dungeon level is reachable
+def floodfill_check(dungeon):
+	start = None
+	open_sqs = 0
+	for row in range(len(dungeon)):
+		for col in range(len(dungeon[row])):
+			if dungeon[row][col] != "#":
+				if start == None: start = (row, col)
+				open_sqs += 1
+
+	visited = set([])
+	queue = [start]
+	while len(queue) > 0:
+		sq = queue.pop()
+		visited.add(sq)
+		for r in (-1, 0, 1):
+			for c in (-1, 0, 1):
+				next = (sq[0] + r, sq[1] + c)
+				if not next in visited and dungeon[next[0]][next[1]] != '#':
+					queue.append(next)
+	#print("Open sqs:", open_sqs, "Visited:", len(visited))
+
+	return open_sqs == len(visited)
+
 def carve_dungeon(dungeon, height, width):
 	rooms = [] # in real code should be a hashset
 	
@@ -470,7 +494,7 @@ def carve_dungeon(dungeon, height, width):
 
 acceptable = 0
 
-while acceptable < 1:
+while acceptable < 5:
 	dungeon = []
 
 	for j in range(0, DUNGEON_HEIGHT):
@@ -484,11 +508,20 @@ while acceptable < 1:
 		for sq in row:
 			if sq == "#": wall_count += 1
 	open_count = (DUNGEON_HEIGHT * DUNGEON_WIDTH) - wall_count
-	print("Walls:", wall_count,"Open:", open_count)
-	print("% open:", open_count / (DUNGEON_HEIGHT * DUNGEON_WIDTH))
+	#print("Walls:", wall_count,"Open:", open_count)
+	#print("% open:", open_count / (DUNGEON_HEIGHT * DUNGEON_WIDTH))
+
+	# When testing, I generated 10,000 dungeon levels and only came up
+	# with 2 that weren't full connected. I could connect them by adding 
+	# corridors but I think it's easier and faster to reject them and create
+	# a new level.
+	if not floodfill_check(dungeon):
+		print("** Dungeon was not completely connected!!")
+		print_dungeon(dungeon)
+		continue
 
 	# I think in a real game I'd probably wnat to reject a map with less than 37 or 38% open space.
 	# The just don't use up enough of the available space
 	if open_count / (40 * 125) > 0.39:
-		print_dungeon(dungeon)
+		#print_dungeon(dungeon)
 		acceptable += 1
