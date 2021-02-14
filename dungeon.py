@@ -140,70 +140,76 @@ def place_room(dungeon, rooms, parent, room):
 	sides = ["n", "s", "e", "w"]
 	random.shuffle(sides)
 
+	# we'll try a few times per side to place the new room
+	num_of_tries = 5
 	while True:
 		side = sides.pop()
 		if side == "n":
 			# Try to place new room to the north of parent. So we know what its lower co-ord will be, 
 			# Pick a column roughly toward the center of parent's north wall
-			end_row = parent[1] + 1
-			start_col = random.randint(parent[2] + 1, parent[4] - 5)
-			start_row = end_row - room[1] 
-			end_col = start_col + room[2]
-			fits = room_fits(dungeon, room, start_row, end_row, start_col, end_col)
-			if fits:
-				rooms.append((room[0], start_row, start_col, end_row, end_col, "N"))
-				carve_room(dungeon, start_row, start_col, room[0])
+			for _ in range(num_of_tries):
+				end_row = parent[1] + 1
+				start_col = random.randint(parent[2] + 1, parent[4] - 5)
+				start_row = end_row - room[1] 
+				end_col = start_col + room[2]
+				fits = room_fits(dungeon, room, start_row, end_row, start_col, end_col)
+				if fits:
+					rooms.append((room[0], start_row, start_col, end_row, end_col, "N"))
+					carve_room(dungeon, start_row, start_col, room[0])
 
-				lo = parent[2] + 1 if parent[2] + 1 > start_col else start_col
-				hi = parent[4] - 1 if parent[4] - 1 < end_col else end_col
-				add_doorway(dungeon, True, end_row - 1, lo, hi)
+					lo = parent[2] + 1 if parent[2] + 1 > start_col else start_col
+					hi = parent[4] - 1 if parent[4] - 1 < end_col else end_col
+					add_doorway(dungeon, True, end_row - 1, lo, hi)
 
-				return True
+					return True
 		elif side == "s":
-			start_row = parent[3] - 1
-			start_col = random.randint(parent[2] + 1, parent[4] - 5)
-			end_row = start_row + room[1] 
-			end_col = start_col + room[2]
-			fits = room_fits(dungeon, room, start_row, end_row, start_col, end_col)
-			if fits:
-				rooms.append((room[0], start_row, start_col, end_row, end_col, "S"))
-				carve_room(dungeon, start_row, start_col, room[0])
+			for _ in range(num_of_tries):
+				start_row = parent[3] - 1
+				start_col = random.randint(parent[2] + 1, parent[4] - 5)
+				end_row = start_row + room[1] 
+				end_col = start_col + room[2]
+				fits = room_fits(dungeon, room, start_row, end_row, start_col, end_col)
+				if fits:
+					rooms.append((room[0], start_row, start_col, end_row, end_col, "S"))
+					carve_room(dungeon, start_row, start_col, room[0])
 
-				lo = parent[2] + 1 if parent[2] + 1 > start_col else start_col
-				hi = parent[4] - 1 if parent[4] - 1 < end_col else end_col
-				add_doorway(dungeon, True, start_row, lo, hi)
+					lo = parent[2] + 1 if parent[2] + 1 > start_col else start_col
+					hi = parent[4] - 1 if parent[4] - 1 < end_col else end_col
+					add_doorway(dungeon, True, start_row, lo, hi)
 
-				return True
+					return True
 		elif side == "w":
-			end_col = parent[2] + 1
-			start_row = random.randint(parent[1] + 1, parent[3] - 5)
-			start_col = end_col - room[2] 
-			end_row = start_row + room[1] 
-			fits = room_fits(dungeon, room, start_row, end_row, start_col, end_col)
-			if fits:
-				rooms.append((room[0], start_row, start_col, end_row, end_col, "W"))
-				carve_room(dungeon, start_row, start_col, room[0])
+			for _ in range(num_of_tries):
+				end_col = parent[2] + 1
+				start_row = random.randint(parent[1] + 1, parent[3] - 5)
+				start_col = end_col - room[2] 
+				end_row = start_row + room[1] 
+				fits = room_fits(dungeon, room, start_row, end_row, start_col, end_col)
+				if fits:
+					rooms.append((room[0], start_row, start_col, end_row, end_col, "W"))
+					carve_room(dungeon, start_row, start_col, room[0])
 
-				lo = parent[1] + 1 if parent[1] + 1 > start_row else start_row
-				hi = parent[3] - 1 if parent[3] - 1 < end_row else end_row
-				add_doorway(dungeon, False, end_col - 1, lo, hi)
-				
-				return True
+					lo = parent[1] + 1 if parent[1] + 1 > start_row else start_row
+					hi = parent[3] - 1 if parent[3] - 1 < end_row else end_row
+					add_doorway(dungeon, False, end_col - 1, lo, hi)
+					
+					return True
 		elif side == "e":
-			start_col = parent[4] - 1
-			start_row = random.randint(parent[1] + 1, parent[3] - 5)
-			end_col = start_col + room[2] 
-			end_row = start_row + room[1] 
-			fits = room_fits(dungeon, room, start_row, end_row, start_col, end_col)
-			if fits:
-				rooms.append((room[0], start_row, start_col, end_row, end_col, "E"))
-				carve_room(dungeon, start_row, start_col, room[0])
+			for _ in range(num_of_tries):
+				start_col = parent[4] - 1
+				start_row = random.randint(parent[1] + 1, parent[3] - 5)
+				end_col = start_col + room[2] 
+				end_row = start_row + room[1] 
+				fits = room_fits(dungeon, room, start_row, end_row, start_col, end_col)
+				if fits:
+					rooms.append((room[0], start_row, start_col, end_row, end_col, "E"))
+					carve_room(dungeon, start_row, start_col, room[0])
 
-				lo = parent[1] + 1 if parent[1] + 1 > start_row else start_row
-				hi = parent[3] - 1 if parent[3] - 1 < end_row else end_row
-				add_doorway(dungeon, False, start_col, lo, hi)
-				
-				return True	
+					lo = parent[1] + 1 if parent[1] + 1 > start_row else start_row
+					hi = parent[3] - 1 if parent[3] - 1 < end_row else end_row
+					add_doorway(dungeon, False, start_col, lo, hi)
+					
+					return True	
 		if len(sides) == 0:
 			break
 
@@ -588,7 +594,11 @@ def test():
 #test()
 
 levels = []
-while acceptable < 5:
+ratios = 0.0
+total_generated = 0
+num_rejected = 0
+
+while acceptable < 20:
 	dungeon = []
 
 	for j in range(0, DUNGEON_HEIGHT):
@@ -596,12 +606,14 @@ while acceptable < 5:
 		dungeon.append(list(row))
 
 	dungeon = carve_dungeon(dungeon, DUNGEON_HEIGHT, DUNGEON_WIDTH, False)
+	total_generated += 1
 
 	wall_count = 0
 	for row in dungeon:
 		for sq in row:
 			if sq == "#": wall_count += 1
 	open_count = (DUNGEON_HEIGHT * DUNGEON_WIDTH) - wall_count
+
 
 	# When testing, I generated 10,000 dungeon levels and only came up
 	# with 2 that weren't full connected. I could connect them by adding 
@@ -615,12 +627,21 @@ while acceptable < 5:
 	# I think in a real game I'd probably wnat to reject a map with less than 37 or 38% open space.
 	# The just don't use up enough of the available space
 	ratio = open_count / (40 * 125)
+	ratios += ratio
 	if ratio > 0.35:
 		levels.append(dungeon)
 		acceptable += 1
+	else:
+		num_rejected += 1
 
 place_stairs(levels)
 
-for level in levels:
-	print_dungeon(level)
-	print("")
+print("Average filled ratio:", ratios / total_generated)
+print("Maps rejected:", num_rejected)
+#for level in levels:
+#	print_dungeon(level)
+#	print("")
+
+print_dungeon(levels[1])
+print("")
+print_dungeon(levels[2])
