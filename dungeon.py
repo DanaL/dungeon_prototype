@@ -68,11 +68,11 @@ def pick_room():
 
 	return (room, height, width)
 
-def carve_room(dungoen, row, col, room):
+def carve_room(dungeon, row, col, room):
 	curr_row = row
-	for row in room:
-		for curr_col in range(0, len(row)):
-			dungeon[curr_row][col + curr_col] = row[curr_col]
+	for line in room:
+		for curr_col in range(0, len(line)):
+			dungeon[curr_row][col + curr_col] = line[curr_col]
 		curr_row += 1
 
 def room_fits(dungeon, room, start_row, end_row, start_col, end_col):
@@ -156,7 +156,7 @@ def place_room(dungeon, rooms, parent, room):
 
 				lo = parent[2] + 1 if parent[2] + 1 > start_col else start_col
 				hi = parent[4] - 1 if parent[4] - 1 < end_col else end_col
-				add_doorway(dungeon, True, end_row, lo, hi)
+				add_doorway(dungeon, True, end_row - 1, lo, hi)
 
 				return True
 		elif side == "s":
@@ -175,9 +175,9 @@ def place_room(dungeon, rooms, parent, room):
 
 				return True
 		elif side == "w":
-			end_col = parent[2]
+			end_col = parent[2] + 1
 			start_row = random.randint(parent[1] + 1, parent[3] - 5)
-			start_col = end_col - room[2] + 1
+			start_col = end_col - room[2] 
 			end_row = start_row + room[1] 
 			fits = room_fits(dungeon, room, start_row, end_row, start_col, end_col)
 			if fits:
@@ -186,7 +186,7 @@ def place_room(dungeon, rooms, parent, room):
 
 				lo = parent[1] + 1 if parent[1] + 1 > start_row else start_row
 				hi = parent[3] - 1 if parent[3] - 1 < end_row else end_row
-				add_doorway(dungeon, False, end_col, lo, hi)
+				add_doorway(dungeon, False, end_col - 1, lo, hi)
 				
 				return True
 		elif side == "e":
@@ -460,7 +460,6 @@ def floodfill_check(dungeon):
 				next = (sq[0] + r, sq[1] + c)
 				if not next in visited and dungeon[next[0]][next[1]] != '#':
 					queue.append(next)
-	#print("Open sqs:", open_sqs, "Visited:", len(visited))
 
 	return open_sqs == len(visited)
 
@@ -477,21 +476,22 @@ def find_vaults(dungeon, rooms):
 	for room in rooms:
 		egresses = 0
 		for col in range(room[2], room[4]):
-			if dungeon[1][col] != '#':
+			if dungeon[room[1]][col] != '#':
 				egresses += 1
 		for col in range(room[2], room[4]):
-			if dungeon[3 - 1][col] != '#':
+			if dungeon[room[3] - 1][col] != '#':
 				egresses += 1
-		for row in range(room[1], room[3]):
+		for row in range(room[1] + 1, room[3] - 1):
 			if dungeon[row][room[2]] != '#':
 				egresses += 1
 			if dungeon[row][room[4] - 1] != '#':
 				egresses += 1
 		if egresses == 1:
 			print("Vault found: (", room[5], ")")
+			print(room[1], room[2], room[3], room[4], room[5])
 			print_room(dungeon, room)
 
-def carve_dungeon(dungeon, height, width):
+def carve_dungeon(dungeon, height, width, check_for_vaults):
 	rooms = [] # in real code should be a hashset
 	
 	# for the first room, pick a spot roughly near the centre
@@ -511,17 +511,50 @@ def carve_dungeon(dungeon, height, width):
 
 		if not success:
 			# if we couldn't place a room, that's probably enough rooms
+			#print("failed:", room[1], room[2])
+			#print_dungeon(room[0])
+			#for room in rooms:
+			#	print("room:", room[1], room[2], room[3], room[4], room[5])
 			break
-
 	add_extra_doors(dungeon, rooms)
 	for _ in range(3):
 		try_to_add_corridor(dungeon, rooms)
 
-	find_vaults(dungeon, rooms)
+	if check_for_vaults:
+		find_vaults(dungeon, rooms)
 
 	return dungeon
 
 acceptable = 0
+
+def test():
+	dungeon = []
+	rooms = []
+	
+	f = open("test_map.txt", "r")
+	lines = f.readlines()
+	for line in lines:
+		if line.startswith("room"): 
+			room = line[6:].strip().split(' ')
+			rooms.append(([], int(room[0]), int(room[1]), int(room[2]), int(room[3]), room[4]))
+		elif line[0] == "#":
+			dungeon.append([c for c in line.strip()])
+
+	room = [ "######################",
+			 "#....................#",
+			 "#....................#",
+			 "#....................#",
+			 "#....................#",
+			 "#....................#",
+			 "#....................#",
+			 "#....................#",
+			 "######################"]
+
+	#print(find_spot_for_room(dungeon, rooms, (room, 9, 22)))
+	print(place_room(dungeon, rooms, rooms[13], (room, 9, 22)))
+	print_dungeon(dungeon)
+	
+#test()
 
 while acceptable < 1:
 	dungeon = []
@@ -530,15 +563,13 @@ while acceptable < 1:
 		row = '#' * DUNGEON_WIDTH
 		dungeon.append(list(row))
 
-	dungeon = carve_dungeon(dungeon, DUNGEON_HEIGHT, DUNGEON_WIDTH)
+	dungeon = carve_dungeon(dungeon, DUNGEON_HEIGHT, DUNGEON_WIDTH, True)
 
 	wall_count = 0
 	for row in dungeon:
 		for sq in row:
 			if sq == "#": wall_count += 1
 	open_count = (DUNGEON_HEIGHT * DUNGEON_WIDTH) - wall_count
-	#print("Walls:", wall_count,"Open:", open_count)
-	#print("% open:", open_count / (DUNGEON_HEIGHT * DUNGEON_WIDTH))
 
 	# When testing, I generated 10,000 dungeon levels and only came up
 	# with 2 that weren't full connected. I could connect them by adding 
@@ -551,6 +582,7 @@ while acceptable < 1:
 
 	# I think in a real game I'd probably wnat to reject a map with less than 37 or 38% open space.
 	# The just don't use up enough of the available space
-	if open_count / (40 * 125) > 0.39:
+	ratio = open_count / (40 * 125)
+	if ratio > 0.35:
 		print_dungeon(dungeon)
 		acceptable += 1
