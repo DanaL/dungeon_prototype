@@ -491,6 +491,37 @@ def find_vaults(dungeon, rooms):
 			print(room[1], room[2], room[3], room[4], room[5])
 			print_room(dungeon, room)
 
+def rnd_set_elt(s):
+	return random.choice(tuple(s))
+
+def place_stairs(levels):
+	open_sqs = []
+	for level in levels:
+		curr_open = set([])
+		for r in range(len(level)):
+			for c in range(len(level[0])):
+				if level[r][c] == '.': 
+					curr_open.add((r, c))
+		open_sqs.append(curr_open)
+
+	# For the up stairs on the first level, we don't have to match them with anything
+	exit = rnd_set_elt(open_sqs[0])
+	levels[0][exit[0]][exit[1]] = '<'
+	open_sqs[0].remove(exit)
+
+	# For the other stairs, I want the stairs to match up so that the levels of the 
+	# dungeon are aligned. 
+	for n in range(len(levels) - 1):
+		options = open_sqs[n].intersection(open_sqs[n + 1])
+		loc = rnd_set_elt(options)
+		# I wonder what the odds that maps would be generated where there is no
+		# corresponding free squares between two adjacent levels??
+		# Is this worth accounting for?
+		levels[n][loc[0]][loc[1]] = '>'
+		levels[n + 1][loc[0]][loc[1]] = '<'
+		open_sqs[n].remove(loc)
+		open_sqs[n + 1].remove(loc)
+
 def carve_dungeon(dungeon, height, width, check_for_vaults):
 	rooms = [] # in real code should be a hashset
 	
@@ -556,14 +587,15 @@ def test():
 	
 #test()
 
-while acceptable < 1:
+levels = []
+while acceptable < 5:
 	dungeon = []
 
 	for j in range(0, DUNGEON_HEIGHT):
 		row = '#' * DUNGEON_WIDTH
 		dungeon.append(list(row))
 
-	dungeon = carve_dungeon(dungeon, DUNGEON_HEIGHT, DUNGEON_WIDTH, True)
+	dungeon = carve_dungeon(dungeon, DUNGEON_HEIGHT, DUNGEON_WIDTH, False)
 
 	wall_count = 0
 	for row in dungeon:
@@ -584,5 +616,11 @@ while acceptable < 1:
 	# The just don't use up enough of the available space
 	ratio = open_count / (40 * 125)
 	if ratio > 0.35:
-		print_dungeon(dungeon)
+		levels.append(dungeon)
 		acceptable += 1
+
+place_stairs(levels)
+
+for level in levels:
+	print_dungeon(level)
+	print("")
