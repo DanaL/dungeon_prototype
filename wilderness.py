@@ -1,38 +1,63 @@
+from copy import deepcopy
 import random
+
+WATER = 0
+DIRT = 1
+GRASS = 2
+TREE = 3
+MOUNTAIN = 4
 
 def print_terrain(grid):
 	for row in grid:
-		s = ""
+		print("".join(row))
+
+def count_neighbouring_trees(grid, r, c):
+	count = 0
+	for dr in (-1, 0, 1):
+		for dc in (-1, 0, 1):
+			if dr == 0 and dc == 0: continue
+			if grid[r + dr][c + dc] == '#':
+				count += 1
+	return count
+
+# We'll do this with a cellular automata rule starting with
+# a mix of trees and grass
+def lay_down_trees(grid, SIZE):
+	for r in range(SIZE):
+		for c in range(SIZE):
+			if grid[r][c] == '`' and random.random() < 0.5:
+				grid[r][c] = '#'
+
+	# Two generations seems to generate pretty good clumps of trees
+	for _ in range(2):
+		next_gen = deepcopy(grid)
+		for r in range(1, SIZE - 1):
+			for c in range(1, SIZE - 1):
+				if grid[r][c] == '`':
+					trees = count_neighbouring_trees(grid, r, c)
+					if trees >= 6 and trees <=8: next_gen[r][c] = '#'
+				elif grid[r][c] == '#':
+					trees = count_neighbouring_trees(grid, r, c)
+					if trees < 4: next_gen[r][c] = '`'
+		grid = next_gen
+
+	return grid
+					
+def translate_to_terrain(grid):
+	new_grid = []
+	for row in grid:
+		translated = []
 		for sq in row:
 			if sq < 1.5:
-				s += '~'
+				t = '~'
 			elif sq < 6.0:
-				s += '.'
+				t = '`'
 			else:
-				s += '^'
-		print(s)
-def print_terrain_split(grid):
-	for row in grid:
-		s = ""
-		for sq in row[:len(row) // 2]:
-			if sq < 1.5:
-				s += '~'
-			elif sq < 6.0:
-				s += '.'
-			else:
-				s += '^'
-		print(s)
-	print("")
-	for row in grid:
-		s = ""
-		for sq in row[len(row) // 2:]:
-			if sq < 1.5:
-				s += '~'
-			elif sq < 6.0:
-				s += '.'
-			else:
-				s += '^'
-		print(s)
+				t = '^'
+			translated.append(t)
+		new_grid.append(translated)
+
+	return new_grid
 
 # Average each point with its neighbours to smooth things out
 def smooth_map(grid, size):
@@ -137,5 +162,8 @@ grid[SIZE - 1][SIZE - 1] = random.uniform(9.0, 11.0)
 
 midpoint_displacement(grid, 0, 0, SIZE)
 smooth_map(grid, SIZE)
+grid = translate_to_terrain(grid)
+grid = lay_down_trees(grid, SIZE)
+
 print_terrain(grid)
 
