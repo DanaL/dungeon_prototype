@@ -8,9 +8,16 @@ GRASS = 2
 TREE = 3
 MOUNTAIN = 4
 
-def print_terrain(grid):
-	for row in grid:
-		print("".join(row))
+def print_terrain(grid, file=""):
+	if file != "":
+		lines = []
+		for row in grid:
+			lines.append("".join(row) + '\n')
+		f = open(file, "w")
+		f.writelines(lines)
+	else:
+		for row in grid:
+			print("".join(row))
 
 def count_neighbouring_terrain(grid, r, c, tile):
 	count = 0
@@ -152,7 +159,6 @@ def draw_river(grid, row, col, angle):
 		d = random.randint(2, 4)
 		n = next_point(row, col, d, angle)
 		if not in_bounds(grid, n[0], n[1]):
-			print("end at border")
 			break
 
 		next_segment = bresenham(row, col, n[0], n[1])
@@ -214,6 +220,22 @@ def add_rivers(grid, SIZE):
 	start_r, start_c, angle = starts[opts.pop()](SIZE)
 	if random.random() < 0.5:
 		draw_river(grid, start_r, start_c, angle)
+
+def fill_in_borders(grid, SIZE):
+	for col in range(SIZE):
+		for row in range(random.randint(5, 10)):
+			grid[row][col] = '~'
+
+	x = random.randint(SIZE // 3, (SIZE // 3) * 2)
+	for r in range(x):
+		grid[r][0] = '~'
+	for r in range(x, SIZE):
+		grid[r][0] = '^'
+	x = random.randint(SIZE // 3, (SIZE // 3) * 2)
+	for r in range(x):
+		grid[r][SIZE - 1] = '~'
+	for r in range(x, SIZE):
+		grid[r][SIZE - 1] = '^'
 
 def translate_to_terrain(grid):
 	new_grid = []
@@ -320,7 +342,7 @@ def midpoint_displacement(grid, r, c, width):
 	midpoint_displacement(grid, r + half_width, c, half_width + 1)
 	midpoint_displacement(grid, r + half_width, c + half_width, half_width + 1)
 
-SIZE = 129
+SIZE = 257
 grid = []
 
 for _ in range(SIZE):
@@ -336,6 +358,7 @@ smooth_map(grid, SIZE)
 grid = translate_to_terrain(grid)
 grid = lay_down_trees(grid, SIZE)
 add_rivers(grid, SIZE)
+fill_in_borders(grid, SIZE)
 
-print_terrain(grid)
+print_terrain(grid, "wilderness.txt")
 
