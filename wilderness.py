@@ -1,4 +1,5 @@
 from copy import deepcopy
+import math
 import random
 
 WATER = 0
@@ -11,12 +12,12 @@ def print_terrain(grid):
 	for row in grid:
 		print("".join(row))
 
-def count_neighbouring_trees(grid, r, c):
+def count_neighbouring_terrain(grid, r, c, tile):
 	count = 0
 	for dr in (-1, 0, 1):
 		for dc in (-1, 0, 1):
 			if dr == 0 and dc == 0: continue
-			if grid[r + dr][c + dc] == '#':
+			if grid[r + dr][c + dc] == tile:
 				count += 1
 	return count
 
@@ -34,15 +35,186 @@ def lay_down_trees(grid, SIZE):
 		for r in range(1, SIZE - 1):
 			for c in range(1, SIZE - 1):
 				if grid[r][c] == '`':
-					trees = count_neighbouring_trees(grid, r, c)
+					trees = count_neighbouring_terrain(grid, r, c, '#')
 					if trees >= 6 and trees <=8: next_gen[r][c] = '#'
 				elif grid[r][c] == '#':
-					trees = count_neighbouring_trees(grid, r, c)
+					trees = count_neighbouring_terrain(grid, r, c, '#')
 					if trees < 4: next_gen[r][c] = '`'
 		grid = next_gen
 
 	return grid
-					
+
+def in_bounds(grid, r, c):
+	if r <= 0 or r >= len(grid) - 1:
+		return False
+	if c <= 0 or c >= len(grid) - 1:
+		return False
+	return True
+
+def bresenham(r0, c0, r1, c1):
+	pts = []
+	error = 0
+	delta_c = c1 - c0
+
+	if delta_c < 0:
+		delta_c = -delta_c
+		step_c = -1
+	else:
+		step_c = 1
+
+	delta_r = r1 - r0
+	if delta_r < 0:
+		delta_r = -delta_r
+		step_r = -1
+	else:
+		step_r = 1
+
+	if delta_r <= delta_c:
+		criterion = delta_c // 2
+		while c0 != c1 + step_c:
+			pts.append((r0, c0))
+			c0 += step_c
+			error += delta_r
+			if error > criterion:
+				error -= delta_c
+				r0 += step_r
+	else:
+		criterion = delta_r // 2
+		while r0 != r1 + step_r:
+			pts.append((r0, c0))
+			r0 += step_r
+			error += delta_c
+			if error > criterion:
+				error -= delta_r
+				c0 += step_c
+
+	return pts
+
+def next_point(r, c, d, angle):
+	next_r = int(r + (d * math.sin(angle)))
+	next_c = int(c + (d * math.cos(angle)))
+
+	return (next_r, next_c)
+
+def river_start_bottom_left(SIZE):
+	x = SIZE // 3
+
+	while True:
+		r = random.randint(SIZE - x, SIZE - 2)
+		c = random.randint(2, x)
+
+		mountains = count_neighbouring_terrain(grid, r, c, '^')
+		if mountains > 3:
+			loc = (r, c)
+			break
+			
+	angle = 6 #5.5
+	
+	return (r, c, angle)
+
+def river_start_bottom_right(SIZE):
+	x = SIZE // 3
+
+	while True:
+		r = random.randint(SIZE - x, SIZE - 2)
+		c = random.randint(SIZE - x - 2, SIZE - 2)
+
+		mountains = count_neighbouring_terrain(grid, r, c, '^')
+		if mountains > 3:
+			loc = (r, c)
+			break
+			
+	angle = 3.5 #5.5
+	
+	return (r, c, angle)
+
+def river_start_centre(SIZE):
+	x = SIZE // 3
+
+	while True:
+		r = random.randint(SIZE - x, SIZE - 2)
+		c = random.randint(x, x + x)
+
+		mountains = count_neighbouring_terrain(grid, r, c, '^')
+		if mountains > 3:
+			loc = (r, c)
+			break
+
+	angle = 5
+
+	return (r, c, angle)
+
+def draw_river(grid, row, col, angle):
+	start = (row, col)
+
+	pts =[]
+	while True:
+		d = random.randint(2, 4)
+		n = next_point(row, col, d, angle)
+		if not in_bounds(grid, n[0], n[1]):
+			print("end at border")
+			break
+
+		next_segment = bresenham(row, col, n[0], n[1])
+
+		river_crossing = False
+		for pt in next_segment:
+			if grid[pt[0]][pt[1]] == '~':
+				river_crossing = True
+				break
+			else:
+				pts.append(pt)
+
+		if grid[n[0]][n[1]] == '~' or river_crossing:
+			break
+
+		row, col = n
+		
+		angle_delta = random.uniform(-0.25, 0.25)
+		angle += angle_delta
+
+		# keep the river from turning back and flowing uphill into the mountains
+		if angle > 6.5: angle = 6.0
+		if angle < 2.75: angle = 3.0
+				
+	# smooth river
+	# bresenham draws lines that can look like:
+	#      ~
+	#    ~~
+	#   ~@
+	# I don't want those points where the player could walk
+	# say NW and avoid stepping on the river
+	extra_pts = []
+	for x in range(len(pts) - 1):
+		a = pts[x]
+		b = pts[x + 1]
+		if a[0] != b[0] and a[1] != b[1]:
+			extra_pts.append((a[0] - 1, a[1]))
+
+	for pt in pts:
+		grid[pt[0]][pt[1]] = '~'
+	grid[start[0]][start[1]] = '~'
+
+	for pt in extra_pts:
+		grid[pt[0]][pt[1]] = '~'
+
+def add_rivers(grid, SIZE):
+	# I want to draw at least 1 and up to 3 rivers
+	starts = (river_start_bottom_left, river_start_bottom_right, river_start_centre)
+	opts = [0, 1, 2]
+	random.shuffle(opts)
+
+	start_r, start_c, angle = starts[opts.pop()](SIZE)
+	draw_river(grid, start_r, start_c, angle)
+
+	start_r, start_c, angle = starts[opts.pop()](SIZE)
+	if random.random() < 0.5:
+		draw_river(grid, start_r, start_c, angle)
+
+	start_r, start_c, angle = starts[opts.pop()](SIZE)
+	if random.random() < 0.5:
+		draw_river(grid, start_r, start_c, angle)
+
 def translate_to_terrain(grid):
 	new_grid = []
 	for row in grid:
@@ -92,7 +264,6 @@ def smooth_map(grid, size):
 					count += 1
 			grid[r][c] = avg / count
 	
-# Fuzz in the range -0.25 to 0.25
 def fuzz():
 	return random.uniform(-0.50, 0.50)
 
@@ -164,6 +335,7 @@ midpoint_displacement(grid, 0, 0, SIZE)
 smooth_map(grid, SIZE)
 grid = translate_to_terrain(grid)
 grid = lay_down_trees(grid, SIZE)
+add_rivers(grid, SIZE)
 
 print_terrain(grid)
 
