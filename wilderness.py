@@ -226,6 +226,9 @@ def fill_in_borders(grid, SIZE):
 		for row in range(random.randint(5, 10)):
 			grid[row][col] = '~'
 
+	for col in range(SIZE):
+		grid[SIZE - 1][col] = '^'
+
 	x = random.randint(SIZE // 3, (SIZE // 3) * 2)
 	for r in range(x):
 		grid[r][0] = '~'
