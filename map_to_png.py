@@ -7,7 +7,7 @@ def terrain_to_rgb(t):
 		return (0, 0, 221)
 	elif t == '`':
 		return (0, 80, 0)
-	elif t == '#':
+	elif t == 'T':
 		return (34, 139, 34)
 	elif t == '.':
 		return (153, 0, 0)

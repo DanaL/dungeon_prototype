@@ -34,7 +34,7 @@ def lay_down_trees(grid, SIZE):
 	for r in range(SIZE):
 		for c in range(SIZE):
 			if grid[r][c] == '`' and random.random() < 0.5:
-				grid[r][c] = '#'
+				grid[r][c] = 'T'
 
 	# Two generations seems to generate pretty good clumps of trees
 	for _ in range(2):
@@ -42,10 +42,10 @@ def lay_down_trees(grid, SIZE):
 		for r in range(1, SIZE - 1):
 			for c in range(1, SIZE - 1):
 				if grid[r][c] == '`':
-					trees = count_neighbouring_terrain(grid, r, c, '#')
-					if trees >= 6 and trees <=8: next_gen[r][c] = '#'
-				elif grid[r][c] == '#':
-					trees = count_neighbouring_terrain(grid, r, c, '#')
+					trees = count_neighbouring_terrain(grid, r, c, 'T')
+					if trees >= 6 and trees <=8: next_gen[r][c] = 'T'
+				elif grid[r][c] == 'T':
+					trees = count_neighbouring_terrain(grid, r, c, 'T')
 					if trees < 4: next_gen[r][c] = '`'
 		grid = next_gen
 
