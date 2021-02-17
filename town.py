@@ -33,9 +33,21 @@ def draw_building(grid, r, c, loc, building):
 	start_r = r + 12 * loc[0]
 	start_c = c + 12 * loc[1]
 
+	# lots are 12x12 and building templates are 9x9 so we can stagger them on the lot 
+	# a bit
+	stagger_r = random.randint(0, 2)
+	stagger_c = random.randint(0, 2)
+
 	for row in range(9):
 		for col in range(9):
-			grid[start_r + row][start_c + col] = building[row][col]
+			grid[start_r + stagger_r + row][start_c + stagger_c + col] = building[row][col]
+
+def lot_has_water(grid, start_r, start_c, lot_r, lot_c):
+	for r in range(12):
+		for c in range(12):
+			if grid[start_r + (lot_r * 12) + r][start_c + (lot_c * 12) + c] == '~':
+				return True
+	return False
 
 # town will be laid out as 5x3 lots, each 12x12 squares
 def place_town(grid, size, buildings):
@@ -43,17 +55,27 @@ def place_town(grid, size, buildings):
 	start_r = random.randint(size // 4, size // 2)
 	start_c = random.randint(size // 4, size // 2 +  60)
 
+	start_r = 100
+	start_c = 50
+
 	# Step one, get rid of most of the trees in town and replace with grass.
 	# (in rogue village I'll probably replace grass and trees with mostly dirt)
 	for r in range(start_r, start_r + 36):
 		for c in range(start_c, start_c + 60):
-			if grid[r][c] == 'T' and random.random() < 0.8:
+			if grid[r][c] == 'T' and random.random() < 0.85:
 				grid[r][c] = '`'
 
 	available_lots = set([])
 	for r in range(3):
 		for c in range(5):
-			available_lots.add((r, c))
+			# Avoid lots with water in the them to avoid plunking a house
+			# over a river. I could do something fancier like actually checking
+			# if placing a house will overlap with water so that if there is just
+			# a corner or edge that's water it's still good. Maybe in Real CodeTM.
+			# Also should reject a town placement where there aren't enough lots 
+			# for all the buildings I want to add because of water hazards.
+			if not lot_has_water(grid, start_r, start_c, r, c):
+				available_lots.add((r, c))
 
 	# The town will have only one shrine
 	loc = random.choice(tuple(available_lots))
