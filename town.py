@@ -1,4 +1,12 @@
 from copy import deepcopy
+import random
+
+def write_map_file(grid, file):
+	lines = []
+	for row in grid:
+		lines.append("".join(row) + '\n')
+	f = open(file, "w")
+	f.writelines(lines)
 
 def print_building(sqs):
 	for line in sqs:
@@ -21,6 +29,45 @@ def rotate(building):
 
 	return rotated
 
+def draw_building(grid, r, c, loc, building):
+	start_r = r + 12 * loc[0]
+	start_c = c + 12 * loc[1]
+
+	for row in range(9):
+		for col in range(9):
+			grid[start_r + row][start_c + col] = building[row][col]
+
+# town will be laid out as 5x3 lots, each 12x12 squares
+def place_town(grid, size, buildings):
+	# pick start co-ordinates that are in the centre-ish part of the map
+	start_r = random.randint(size // 4, size // 2)
+	start_c = random.randint(size // 4, size // 2 +  60)
+
+	# Step one, get rid of most of the trees in town and replace with grass.
+	# (in rogue village I'll probably replace grass and trees with mostly dirt)
+	for r in range(start_r, start_r + 36):
+		for c in range(start_c, start_c + 60):
+			if grid[r][c] == 'T' and random.random() < 0.8:
+				grid[r][c] = '`'
+
+	available_lots = set([])
+	for r in range(3):
+		for c in range(5):
+			available_lots.add((r, c))
+
+	# The town will have only one shrine
+	loc = random.choice(tuple(available_lots))
+	available_lots.remove(loc)
+	draw_building(grid, start_r, start_c, loc, buildings["shrine"])
+
+	for  _ in range(6):
+		loc = random.choice(tuple(available_lots))
+		available_lots.remove(loc)
+		if random.random() < 0.5:
+			draw_building(grid, start_r, start_c, loc, buildings["cottage 1"])
+		else:
+			draw_building(grid, start_r, start_c, loc, buildings["cottage 2"])
+	
 # load buildings
 f = open("buildings.txt", "r")
 lines = [line.strip() for line in f.readlines()]
@@ -33,11 +80,14 @@ for b in range(len(lines) // 10):
 		sqs.append([c for c in lines[r]])
 	buildings[name] = sqs
 
-print_building(buildings["cottage 2"])
-r1 = rotate(buildings["cottage 2"])
-print("")
-print_building(r1)
-r2 = rotate(r1)
-print("")
-print_building(r2)
+# load the test wilderness map
+grid = []
+f = open("wilderness.txt", "r")
+for line in f.readlines():
+	grid.append([c for c in line.strip()])
+size = len(grid)
+
+place_town(grid, size, buildings)
+
+write_map_file(grid, "wilderness2.txt")
 
