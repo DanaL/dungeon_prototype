@@ -33,6 +33,51 @@ def draw_building(grid, r, c, loc, building):
 	start_r = r + 12 * loc[0]
 	start_c = c + 12 * loc[1]
 
+	print("Lot:", loc)
+	# We might want to rotate the building so that an entrance more or less
+	# points toward town centre. This assumes all the building templates have
+	# an entrance on their south wall to start with
+	if loc[0] == 0 and loc[1] < 2:
+		if random.random() < 0.5:
+			# make entrance face east
+			building = rotate(building)
+	elif loc[0] == 0 and loc[1] > 2:
+		if random.random() < 0.5:
+			# make entrance face west
+			building = rotate(building)
+			building = rotate(building)
+			building = rotate(building)
+	elif loc[0] == 1 and loc[1] < 2:
+		# make entrance face east
+		building = rotate(building)
+	elif loc[0] == 1 and loc[1] > 2:
+		# make entrance face west
+		building = rotate(building)
+		building = rotate(building)
+		building = rotate(building)
+	elif loc[0] == 2 and loc[1] == 2:
+		# make entrance face north
+		building = rotate(building)
+		building = rotate(building)
+	elif loc[0] == 2 and loc[1] < 2:
+		if random.random() < 0.5:
+			# make entrance face east
+			building = rotate(building)
+		else:
+			# make entrance face north
+			building = rotate(building)
+			building = rotate(building)
+	elif loc[0] == 2 and loc[1] > 2:
+		if random.random() < 0.5:
+			# make entrance face west
+			building = rotate(building)
+			building = rotate(building)
+			building = rotate(building)
+		else:
+			# make entrance face north
+			building = rotate(building)
+			building = rotate(building)
+
 	# lots are 12x12 and building templates are 9x9 so we can stagger them on the lot 
 	# a bit
 	stagger_r = random.randint(0, 2)
@@ -69,11 +114,12 @@ def place_town(grid, size, buildings):
 	for r in range(3):
 		for c in range(5):
 			# Avoid lots with water in the them to avoid plunking a house
-			# over a river. I could do something fancier like actually checking
-			# if placing a house will overlap with water so that if there is just
-			# a corner or edge that's water it's still good. Maybe in Real CodeTM.
-			# Also should reject a town placement where there aren't enough lots 
-			# for all the buildings I want to add because of water hazards.
+			# over a river. This is pretty simple minded and  I could do something 
+			# fancier like actually checking if placing a house will overlap with water 
+			# so that if there is just a corner or edge that's water it's still good. Maybe 
+			# in Real CodeTM. Also should reject a town placement where there aren't enough 
+			# lots for all the buildings I want to add because of water hazards.
+			if r == 1 and c == 2: continue # leave the centre sq empty as a 'town square'
 			if not lot_has_water(grid, start_r, start_c, r, c):
 				available_lots.add((r, c))
 
