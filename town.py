@@ -20,15 +20,15 @@ f = open("buildings.txt", "r")
 lines = [line.strip() for line in f.readlines()]
 
 buildings = { }
-for b in range(len(lines) / 10):
+for b in range(len(lines) // 10):
 	name = lines[b * 10]
 	sqs = []
 	for r in range(b * 10 + 1, b * 10 + 10):
 		sqs.append([c for c in lines[r]])
 	buildings[name] = sqs
 
-print_building(buildings["shrine"])
-r1 = rotate(buildings["shrine"])
+print_building(buildings["cottage 2"])
+r1 = rotate(buildings["cottage 2"])
 print("")
 print_building(r1)
 r2 = rotate(r1)
