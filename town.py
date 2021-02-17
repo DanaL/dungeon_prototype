@@ -11,7 +11,13 @@ def rotate(building):
 		for c in range(len(building)):
 			nr = -(c - 4) + 4
 			nc = r
-			rotated[nr][nc] = building[r][c]	 
+
+			if building[r][c] == '|':
+				rotated[nr][nc] = '-'
+			elif building[r][c] == '-':
+				rotated[nr][nc] = '|'
+			else:	
+				rotated[nr][nc] = building[r][c]	 
 
 	return rotated
 
