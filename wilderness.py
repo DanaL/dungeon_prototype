@@ -115,7 +115,7 @@ def river_start_bottom_left(SIZE):
 			loc = (r, c)
 			break
 			
-	angle = 6 #5.5
+	angle = -0.28 #5.5
 	
 	return (r, c, angle)
 
@@ -131,7 +131,7 @@ def river_start_bottom_right(SIZE):
 			loc = (r, c)
 			break
 			
-	angle = 3.5 #5.5
+	angle = -2.5 #5.5
 	
 	return (r, c, angle)
 
@@ -147,7 +147,7 @@ def river_start_centre(SIZE):
 			loc = (r, c)
 			break
 
-	angle = 5
+	angle = -1.5 
 
 	return (r, c, angle)
 
@@ -176,13 +176,13 @@ def draw_river(grid, row, col, angle):
 
 		row, col = n
 		
-		angle_delta = random.uniform(-0.25, 0.25)
+		angle_delta = random.uniform(-0.2, 0.2)
 		angle += angle_delta
 
 		# keep the river from turning back and flowing uphill into the mountains
-		if angle > 6.5: angle = 6.0
-		if angle < 2.75: angle = 3.0
-				
+		if angle > -0.1: angle = -0.28 
+		if angle < -3.0: angle = -2.6
+		
 	# smooth river
 	# bresenham draws lines that can look like:
 	#      ~
